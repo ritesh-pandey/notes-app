@@ -1,12 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./index.css";
 
 function NotesApp() {
   const [noteName, setNoteName] = useState();
   const [noteStatus, setNoteStatus] = useState();
   const [notes, setNotes] = useState([]);
-  const [filter, setFilterBy] = useState('all');
-  // let renderNotes = notes;
+  const [filterBy, setFilterBy] = useState('all');
+  const [renderNotes, setRenderNotes] = useState([]);
 
   const handleAddNote = () => {
     setNotes((previousNotes) => [
@@ -20,31 +20,38 @@ function NotesApp() {
     setNoteStatus('');
   }
 
-  /**
-   * Get all notes in following order
-   * - active
-   * - completed
-   * - others
-   */
-  const getAllNotes = () => {
-    const allNotes = [].concat(notes.filter(n => n.status === 'active'), notes.filter(n => n.status === 'completed'), notes.filter(n => n.status !== 'active' || n.status !== 'completed'));
-    return allNotes;
+  useEffect(() => {
+    setRenderNotes(getRenderNotes(notes, filterBy));
+  }, [notes, filterBy]);
+
+  const getActiveNotes = (notes) => {
+    return notes.filter(n => n.status === 'active')
   }
 
-  /**
-   * When filter value changes, re-calculate notes variable req for render.
-   * Keep the render function dumb. Make changes in data only.
-   * @param {string} filter New filter value
-   */
-  const handleFilterChange = (filter) => {
-    // if (filter === 'all') {
-    //   renderNotes = getAllNotes();
-    // } else if (filter === 'active') {
-    //   renderNotes = notes.filter(n => n.status === 'active');
-    // } else if (filter === 'completed') {
-    //   renderNotes = notes.filter(n => n.status === 'completed');
-    // }
-    setFilterBy(filter);
+  const getCompletedNotes = (notes) => {
+    return notes.filter(n => n.status === 'completed')
+  }
+
+  const getOtherNotes = (notes) => {
+    return notes.filter(n => !(n.status === 'active' || n.status === 'completed'))
+  }
+
+  const getAllNotes = (notes) => {
+    return [].concat(getActiveNotes(notes), getCompletedNotes(notes), getOtherNotes(notes));
+  }
+
+  const getRenderNotes = (notes, filterBy) => {
+    if (filterBy === 'all') {
+      return getAllNotes(notes);
+    } else if (filterBy === 'active') {
+      return getActiveNotes(notes);
+    } else if (filterBy === 'completed') {
+      return getCompletedNotes(notes);
+    }
+  }
+
+  const handleFilterChange = (filterBy) => {
+    setFilterBy(filterBy);
   }
 
   return (
@@ -73,7 +80,7 @@ function NotesApp() {
             </tr>
           </thead>
           <tbody data-testid="noteList">
-            {notes.map((note, idx) => (
+            {renderNotes.map((note, idx) => (
               <tr key={idx}>
                 <td>{note.name}</td>
                 <td>{note.status}</td>
